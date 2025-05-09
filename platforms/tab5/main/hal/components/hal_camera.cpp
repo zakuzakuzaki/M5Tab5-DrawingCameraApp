@@ -27,7 +27,6 @@
 #include "esp_video_device.h"
 #include "driver/i2c_master.h"
 #include "driver/ppa.h"
-// #include "human_face_detect.hpp"
 #include "imlib.h"
 #include "freertos/queue.h"
 
@@ -282,14 +281,6 @@ void app_camera_display(void* arg)
     };
     ESP_ERROR_CHECK(ppa_register_client(&ppa_srm_config, &ppa_srm_handle));
 
-    // /* human face detect */
-    // human_face_detector = new HumanFaceDetect();
-    // dl::image::img_t dl_img;
-    // dl_img.width = img_show->h;
-    // dl_img.height = img_show->w;
-    // dl_img.data = img_show->data;
-    // dl_img.pix_type = dl::image::DL_IMAGE_PIX_TYPE_RGB565;
-
     int task_control = 0;
     while (1) {
         memset(&buf, 0, sizeof(buf));
@@ -328,21 +319,6 @@ void app_camera_display(void* arg)
         // auto detect_results = human_face_detector->run(dl_img); // format: hwc
 
         bsp_display_lock(0);
-        // if (detect_results.size()) {
-        //     for (const auto& res : detect_results) {
-        //         int x = res.box[0];
-        //         int y = res.box[1];
-        //         int w = res.box[2] - res.box[0];
-        //         int h = res.box[3] - res.box[1];
-        //         // printf("detect %d, %d, %d, %d\n", x, y, w, h);
-        //         imlib_draw_rectangle(img_show, x, y, w, h, 0x001F, 3, false);
-        //         imlib_draw_circle(img_show, res.keypoint[0], res.keypoint[1], 5, 0x001F, 1, true); // 左眼
-        //         imlib_draw_circle(img_show, res.keypoint[2], res.keypoint[3], 5, 0xF81F, 1, true); // 嘴巴左角
-        //         imlib_draw_circle(img_show, res.keypoint[4], res.keypoint[5], 5, 0x07F0, 1, true); // 鼻子
-        //         imlib_draw_circle(img_show, res.keypoint[6], res.keypoint[7], 5, 0x001F, 1, true); // 右眼
-        //         imlib_draw_circle(img_show, res.keypoint[8], res.keypoint[9], 5, 0xF81F, 1, true); // 嘴巴右角
-        //     }
-        // }
         lv_canvas_set_buffer(camera_canvas, img_show->data, CAMERA_WIDTH, CAMERA_HEIGHT, LV_COLOR_FORMAT_RGB565);
         bsp_display_unlock();
 
@@ -408,12 +384,8 @@ void HalEsp32::stopCameraCapture()
     int control_state = 0;  // pause
     xQueueSend(queue_camera_ctrl, &control_state, portMAX_DELAY);
 
-    // delay(200);
-
     control_state = 2;  // exit
     xQueueSend(queue_camera_ctrl, &control_state, portMAX_DELAY);
-
-    // delay(200);
 }
 
 bool HalEsp32::isCameraCapturing()

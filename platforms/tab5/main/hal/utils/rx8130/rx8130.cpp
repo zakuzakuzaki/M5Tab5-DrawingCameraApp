@@ -204,49 +204,26 @@ void RX8130_Class::setTimerIrq(uint16_t seconds)
     buffer[1]             = (seconds >> 8) & 0xFF;  // 定时器高字节
 
     // Step 1: Disable Timer
-    // if (i2c_read(RX8130_I2C_ADDRESS, RX8130_REG_EXTENSION, &flag_register, 1) != 0) {
-    //     return -1;  // I2C 读取失败
-    // }
     flag_register = readRegister8(RX8130_REG_EXTENSION);
 
     flag_register &= ~(1 << 4);  // 禁用定时器 (TE = 0)
-    // if (i2c_write(RX8130_I2C_ADDRESS, RX8130_REG_EXTENSION, &flag_register, 1) != 0) {
-    //     return -1;
-    // }
     writeRegister8(RX8130_REG_EXTENSION, flag_register);
 
     // Setp 2: Write Timer Counter Register (1Ah, 1Bh)
-    // Write Timer Counter Register (1Ah, 1Bh)
-    // if (i2c_write(RX8130_I2C_ADDRESS, RX8130_REG_TIMER_COUNTER_LOW, buffer, 2) != 0) {
-    //     return -1;
-    // }
     writeRegister(RX8130_REG_TIMER_COUNTER_LOW, buffer, 2);
 
     // Step 3: Enable Timer
-    // if (i2c_read(RX8130_I2C_ADDRESS, RX8130_REG_EXTENSION, &flag_register, 1) != 0) {
-    //     return -1; // I2C 读取失败
-    // }
     flag_register = readRegister8(RX8130_REG_EXTENSION);
 
     setbit(flag_register, 4);  // 启用定时器 (TE = 1)
     clrbit(flag_register, 2);
     setbit(flag_register, 1);
     clrbit(flag_register, 0);
-    // if (i2c_write(RX8130_I2C_ADDRESS, RX8130_REG_EXTENSION, &flag_register, 1) != 0) {
-    //     return -1;
-    // }
     writeRegister8(RX8130_REG_EXTENSION, flag_register);
 
     // Step 4: Enable Timer Interrupt
-    // if (i2c_read(RX8130_I2C_ADDRESS, RX8130_REG_CONTROL0, &flag_register, 1) != 0) {
-    //     return -1; // I2C 读取失败
-    // }
     flag_register = readRegister8(RX8130_REG_CONTROL0);
-
     flag_register |= (1 << 4);  // 启用定时器中断 (TIE = 1)
-    // if (i2c_write(RX8130_I2C_ADDRESS, RX8130_REG_CONTROL0, &flag_register, 1) != 0) {
-    //     return -1;
-    // }
     writeRegister8(RX8130_REG_CONTROL0, flag_register);
 }
 

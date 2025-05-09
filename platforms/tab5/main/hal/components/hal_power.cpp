@@ -96,32 +96,6 @@ void HalEsp32::sleepAndTouchWakeup()
 {
     mclog::tagInfo(_tag, "sleep and touch wakeup");
 
-    // const gpio_num_t wakeup_pin = GPIO_NUM_23;
-
-    // clearRtcIrq();
-    // clearImuIrq();
-
-    // delay(200);
-
-    // /* Enable wake up from GPIO */
-    // gpio_wakeup_enable(wakeup_pin, GPIO_INTR_LOW_LEVEL);
-    // esp_sleep_enable_gpio_wakeup();
-
-    // mclog::tagInfo(_tag, "wait for touch io release...");
-    // while (gpio_get_level(wakeup_pin) == 0) {
-    //     delay(100);
-    // }
-
-    // mclog::tagInfo(_tag, "enter light sleep and wait for touch wakeup...");
-    // delay(200);
-
-    // esp_light_sleep_start();
-    // while (1) {
-    //     delay(100);
-    // }
-
-    // mclog::tagInfo(_tag, "wakeup from light sleep");
-
     lvglLock();
     auto brightness = getDisplayBrightness();
     setDisplayBrightness(0);
