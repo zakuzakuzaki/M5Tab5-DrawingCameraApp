@@ -40,7 +40,7 @@ jobs:
       matrix:
         include:
           - check-path: './'    # path to include
-            exclude-path: 'app/assets/images/'    # path to exclude
+            exclude-path: 'app/assets/images/|platforms/tab5/components/'    # path to exclude
           #- check: 'src'
           #  exclude: '(Fonts)' # Exclude file paths containing "Fonts"
           #- check: 'examples'
