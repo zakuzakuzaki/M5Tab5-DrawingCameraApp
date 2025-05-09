@@ -120,8 +120,8 @@ int app_video_open(char* dev, example_fmt_t init_fmt)
     if (default_format.fmt.pix.pixelformat != init_fmt) {
         struct v4l2_format format = {.type = type,
                                      .fmt  = {.pix = {.width       = default_format.fmt.pix.width,
-                                                     .height      = default_format.fmt.pix.height,
-                                                     .pixelformat = init_fmt}}};
+                                                      .height      = default_format.fmt.pix.height,
+                                                      .pixelformat = init_fmt}}};
 
         if (ioctl(fd, VIDIOC_S_FMT, &format) != 0) {
             ESP_LOGE(TAG, "failed to set format");
@@ -292,20 +292,20 @@ void app_camera_display(void* arg)
         }
 
         ppa_srm_oper_config_t srm_config = {.in             = {.buffer         = camera->buffer[buf.index],
-                                                   .pic_w          = 1280,
-                                                   .pic_h          = 720,
-                                                   .block_w        = 1280,
-                                                   .block_h        = 720,
-                                                   .block_offset_x = 0,
-                                                   .block_offset_y = 0,
-                                                   .srm_cm         = PPA_SRM_COLOR_MODE_RGB565},
+                                                               .pic_w          = 1280,
+                                                               .pic_h          = 720,
+                                                               .block_w        = 1280,
+                                                               .block_h        = 720,
+                                                               .block_offset_x = 0,
+                                                               .block_offset_y = 0,
+                                                               .srm_cm         = PPA_SRM_COLOR_MODE_RGB565},
                                             .out            = {.buffer         = img_show_data,
-                                                    .buffer_size    = img_show_size,
-                                                    .pic_w          = 1280,
-                                                    .pic_h          = 720,
-                                                    .block_offset_x = 0,
-                                                    .block_offset_y = 0,
-                                                    .srm_cm         = PPA_SRM_COLOR_MODE_RGB565},
+                                                               .buffer_size    = img_show_size,
+                                                               .pic_w          = 1280,
+                                                               .pic_h          = 720,
+                                                               .block_offset_x = 0,
+                                                               .block_offset_y = 0,
+                                                               .srm_cm         = PPA_SRM_COLOR_MODE_RGB565},
                                             .rotation_angle = PPA_SRM_ROTATION_ANGLE_0,
                                             .scale_x        = 1,
                                             .scale_y        = 1,
