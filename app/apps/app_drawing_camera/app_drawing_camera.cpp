@@ -372,33 +372,66 @@ void AppDrawingCamera::setBackgroundImage()
     if (_camera_preview && _canvas) {
         mclog::tagInfo(getAppInfo().name, "Copying camera image to canvas background");
         
-        // シンプルなピクセル単位コピー（4ピクセル毎にサンプリング）
-        int step = 4;
-        int copied_pixels = 0;
+        // カメラプレビューとキャンバスのドローバッファを取得
+        lv_draw_buf_t* camera_buf = lv_canvas_get_draw_buf(_camera_preview);
+        lv_draw_buf_t* canvas_buf = lv_canvas_get_draw_buf(_canvas);
         
-        for (int y = 0; y < CANVAS_HEIGHT; y += step) {
-            for (int x = 0; x < CANVAS_WIDTH; x += step) {
-                // カメラプレビューから色を取得
-                lv_color32_t pixel_color32 = lv_canvas_get_px(_camera_preview, x, y);
-                lv_color_t pixel_color = lv_color_make(pixel_color32.red, pixel_color32.green, pixel_color32.blue);
+        if (camera_buf && canvas_buf) {
+            // バッファサイズを確認
+            uint32_t camera_width = camera_buf->header.w;
+            uint32_t camera_height = camera_buf->header.h;
+            uint32_t canvas_width = canvas_buf->header.w;
+            uint32_t canvas_height = canvas_buf->header.h;
+            
+            mclog::tagInfo(getAppInfo().name, "Camera buffer: %dx%d, Canvas buffer: %dx%d", 
+                          camera_width, camera_height, canvas_width, canvas_height);
+            
+            // 両方のバッファが同じサイズの場合は直接コピー
+            if (camera_width == canvas_width && camera_height == canvas_height) {
+                uint8_t* camera_data = camera_buf->data;
+                uint8_t* canvas_data = canvas_buf->data;
                 
-                // 4x4ブロックを同じ色で塗りつぶし
-                for (int dy = 0; dy < step && (y + dy) < CANVAS_HEIGHT; dy++) {
-                    for (int dx = 0; dx < step && (x + dx) < CANVAS_WIDTH; dx++) {
-                        lv_canvas_set_px(_canvas, x + dx, y + dy, pixel_color, LV_OPA_COVER);
+                if (camera_data && canvas_data) {
+                    // RGB565フォーマットを前提として、1ピクセル = 2バイト
+                    uint32_t buffer_size = camera_width * camera_height * 2;
+                    memcpy(canvas_data, camera_data, buffer_size);
+                    mclog::tagInfo(getAppInfo().name, "Camera image copied directly (%d bytes)", buffer_size);
+                } else {
+                    mclog::tagError(getAppInfo().name, "Failed to get buffer data pointers");
+                    return;
+                }
+            } else {
+                // サイズが異なる場合はピクセル単位でコピー（1:1スケール）
+                uint32_t copy_width = (camera_width < canvas_width) ? camera_width : canvas_width;
+                uint32_t copy_height = (camera_height < canvas_height) ? camera_height : canvas_height;
+                
+                mclog::tagInfo(getAppInfo().name, "Copying %dx%d pixels", copy_width, copy_height);
+                
+                for (uint32_t y = 0; y < copy_height; y++) {
+                    for (uint32_t x = 0; x < copy_width; x++) {
+                        lv_color32_t pixel_color32 = lv_canvas_get_px(_camera_preview, x, y);
+                        lv_color_t pixel_color = lv_color_make(pixel_color32.red, pixel_color32.green, pixel_color32.blue);
+                        lv_canvas_set_px(_canvas, x, y, pixel_color, LV_OPA_COVER);
+                    }
+                    
+                    // 進行状況（100行毎）
+                    if (y % 100 == 0) {
+                        mclog::tagInfo(getAppInfo().name, "Copying line %d/%d", y, copy_height);
                     }
                 }
-                copied_pixels++;
+                mclog::tagInfo(getAppInfo().name, "Camera image copied pixel by pixel");
             }
             
-            // 進行状況（100行毎）
-            if (y % 100 == 0) {
-                mclog::tagInfo(getAppInfo().name, "Copying line %d/%d", y, CANVAS_HEIGHT);
-            }
+            // キャンバスを無効化して再描画を促す
+            lv_obj_invalidate(_canvas);
+            
+        } else {
+            mclog::tagError(getAppInfo().name, "Failed to get draw buffers");
+            return;
         }
         
         _has_background_image = true;
-        mclog::tagInfo(getAppInfo().name, "Camera image copied successfully (%d blocks)", copied_pixels);
+        mclog::tagInfo(getAppInfo().name, "Camera image set as background successfully");
     } else {
         mclog::tagError(getAppInfo().name, "Camera preview or canvas is null");
     }
