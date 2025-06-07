@@ -95,47 +95,64 @@ void AppDrawingCamera::initDrawingScreen()
     lv_obj_add_event_cb(_canvas, canvasEventHandler, LV_EVENT_RELEASED, this);
     lv_obj_add_flag(_canvas, LV_OBJ_FLAG_CLICKABLE);
 
-    // カラーパレットコンテナ（左側に縦配置）
+    // 現在選択中の色を表示するボタン（左上に配置）
+    _current_color_btn = lv_btn_create(_main_screen);
+    lv_obj_set_size(_current_color_btn, 80, 80);
+    lv_obj_align(_current_color_btn, LV_ALIGN_TOP_LEFT, 20, 20);
+    lv_obj_add_event_cb(_current_color_btn, currentColorBtnEventHandler, LV_EVENT_CLICKED, this);
+    lv_obj_move_foreground(_current_color_btn);  // 前面に移動
+
+    // 初期色を白に設定
+    lv_obj_set_style_bg_color(_current_color_btn, _current_color, 0);
+    lv_obj_set_style_border_width(_current_color_btn, 3, 0);
+    lv_obj_set_style_border_color(_current_color_btn, lv_color_hex(0x666666), 0);
+    lv_obj_set_style_radius(_current_color_btn, 40, 0);
+
+    // カラーパレットコンテナ（最初は非表示）
     _color_palette = lv_obj_create(_main_screen);
-    lv_obj_set_size(_color_palette, 120, 800);               // 幅と高さを入れ替え
-    lv_obj_align(_color_palette, LV_ALIGN_LEFT_MID, 20, 0);  // 左中央に配置
+    lv_obj_set_size(_color_palette, 120, 800);
+    lv_obj_align(_color_palette, LV_ALIGN_LEFT_MID, 0, 0);
     lv_obj_set_style_bg_color(_color_palette, lv_color_hex(0x333333), 0);
     lv_obj_set_style_border_width(_color_palette, 2, 0);
     lv_obj_set_style_border_color(_color_palette, lv_color_white(), 0);
     lv_obj_set_style_radius(_color_palette, 20, 0);
     lv_obj_move_foreground(_color_palette);  // 前面に移動
 
-    // カラーパレットの色設定（クラスメンバとして保存）
-    _palette_colors[0] = lv_color_white();
-    _palette_colors[1] = lv_color_hex(0xFF0000);  // 赤
-    _palette_colors[2] = lv_color_hex(0x00FF00);  // 緑
-    _palette_colors[3] = lv_color_hex(0x0000FF);  // 青
-    _palette_colors[4] = lv_color_hex(0xFFFF00);  // 黄
-    _palette_colors[5] = lv_color_hex(0xFF00FF);  // マゼンタ
-    _palette_colors[6] = lv_color_hex(0x00FFFF);  // シアン
-    _palette_colors[7] = lv_color_hex(0xFFA500);  // オレンジ
+    // 最初は非表示
+    lv_obj_add_flag(_color_palette, LV_OBJ_FLAG_HIDDEN);
 
-    int color_count = 8;
-    int btn_size    = 70;                                                    // ボタンサイズは維持
-    int spacing     = (800 - (color_count * btn_size)) / (color_count + 1);  // 高さに合わせてスペース調整
+    // カラーパレットの色設定（クラスメンバとして保存）
+    _palette_colors[0] = lv_color_black();  // 黒
+    _palette_colors[1] = lv_color_white();
+    _palette_colors[2] = lv_color_hex(0xFF0000);  // 赤
+    _palette_colors[3] = lv_color_hex(0x00FF00);  // 緑
+    _palette_colors[4] = lv_color_hex(0x0000FF);  // 青
+    _palette_colors[5] = lv_color_hex(0xFFFF00);  // 黄
+    _palette_colors[6] = lv_color_hex(0xFF00FF);  // マゼンタ
+    _palette_colors[7] = lv_color_hex(0x00FFFF);  // シアン
+    _palette_colors[8] = lv_color_hex(0xFFA500);  // オレンジ
+
+    int color_count = 9;
+    int btn_size    = 70;
+    int spacing     = (800 - (color_count * btn_size)) / (color_count + 1);
 
     for (int i = 0; i < color_count; i++) {
         lv_obj_t* color_btn = lv_btn_create(_color_palette);
         lv_obj_set_size(color_btn, btn_size, btn_size);
-        lv_obj_set_pos(color_btn, 25, spacing + i * (btn_size + spacing));  // x,yを入れ替えて縦配置
+        lv_obj_set_pos(color_btn, 25, spacing + i * (btn_size + spacing));
         lv_obj_set_style_bg_color(color_btn, _palette_colors[i], 0);
         lv_obj_set_style_border_width(color_btn, 2, 0);
         lv_obj_set_style_border_color(color_btn, lv_color_hex(0x666666), 0);
         lv_obj_set_style_radius(color_btn, btn_size / 2, 0);
         lv_obj_add_event_cb(color_btn, colorPaletteEventHandler, LV_EVENT_CLICKED, this);
 
-        // 色インデックスを保存（色のポインタではなく）
+        // 色インデックスを保存
         lv_obj_set_user_data(color_btn, (void*)(intptr_t)i);
     }
 
-    // カメラボタン（上部右に配置）
+    // カメラボタン（下部右に配置、サイズを倍に）
     _camera_btn = lv_btn_create(_main_screen);
-    lv_obj_set_size(_camera_btn, 80, 40);
+    lv_obj_set_size(_camera_btn, 160, 80);
     lv_obj_align(_camera_btn, LV_ALIGN_BOTTOM_RIGHT, -20, -20);
     lv_obj_add_event_cb(_camera_btn, cameraBtnEventHandler, LV_EVENT_CLICKED, this);
     lv_obj_move_foreground(_camera_btn);  // 前面に移動
@@ -144,10 +161,10 @@ void AppDrawingCamera::initDrawingScreen()
     lv_label_set_text(camera_label, "Camera");
     lv_obj_center(camera_label);
 
-    // クリアボタン（上部左に配置）
+    // クリアボタン（右上に配置、サイズを倍に）
     _clear_btn = lv_btn_create(_main_screen);
-    lv_obj_set_size(_clear_btn, 60, 40);
-    lv_obj_align(_clear_btn, LV_ALIGN_BOTTOM_MID, 0, -20);
+    lv_obj_set_size(_clear_btn, 120, 80);
+    lv_obj_align(_clear_btn, LV_ALIGN_TOP_RIGHT, -20, 20);
     lv_obj_add_event_cb(_clear_btn, clearBtnEventHandler, LV_EVENT_CLICKED, this);
     lv_obj_move_foreground(_clear_btn);  // 前面に移動
 
@@ -174,27 +191,14 @@ void AppDrawingCamera::initCameraScreen()
     // HALがバッファを設定するので、ここでは初期化のみ
     lv_canvas_fill_bg(_camera_preview, lv_color_black(), LV_OPA_COVER);
 
-    // 撮影ボタン（上部中央に配置）
-    _capture_btn = lv_btn_create(_camera_screen);
-    lv_obj_set_size(_capture_btn, 100, 60);  // 少し大きくして押しやすく
-    lv_obj_align(_capture_btn, LV_ALIGN_BOTTOM_MID, 0, -20);
-    lv_obj_add_event_cb(_capture_btn, captureBtnEventHandler, LV_EVENT_CLICKED, this);
-    lv_obj_move_foreground(_capture_btn);  // 前面に移動
+    // カメラプレビューをタップで撮影できるようにする
+    lv_obj_add_flag(_camera_preview, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_event_cb(_camera_preview, cameraPreviewEventHandler, LV_EVENT_CLICKED, this);
 
-    // 撮影ボタンのスタイルを目立つようにする
-    lv_obj_set_style_bg_color(_capture_btn, lv_color_hex(0xFF4444), 0);
-    lv_obj_set_style_radius(_capture_btn, 30, 0);
-
-    lv_obj_t* capture_label = lv_label_create(_capture_btn);
-    lv_label_set_text(capture_label, "CAPTURE");
-    lv_obj_center(capture_label);
-    lv_obj_set_style_text_color(capture_label, lv_color_white(), 0);
-    lv_obj_set_style_text_font(capture_label, &lv_font_montserrat_18, 0);
-
-    // 戻るボタン（上部左に配置）
+    // 戻るボタン（右下に配置）
     _camera_back_btn = lv_btn_create(_camera_screen);
-    lv_obj_set_size(_camera_back_btn, 80, 50);
-    lv_obj_align(_camera_back_btn, LV_ALIGN_BOTTOM_LEFT, 20, -20);
+    lv_obj_set_size(_camera_back_btn, 160, 80);
+    lv_obj_align(_camera_back_btn, LV_ALIGN_BOTTOM_RIGHT, -20, -20);
     lv_obj_add_event_cb(_camera_back_btn, backBtnEventHandler, LV_EVENT_CLICKED, this);
     lv_obj_move_foreground(_camera_back_btn);  // 前面に移動
 
@@ -262,10 +266,22 @@ void AppDrawingCamera::colorPaletteEventHandler(lv_event_t* e)
 
     // 選択された色のインデックスを取得
     int color_index = (int)(intptr_t)lv_obj_get_user_data(btn);
-    if (color_index >= 0 && color_index < 8) {
+    if (color_index >= 0 && color_index < 9) {
         app->_current_color = app->_palette_colors[color_index];
         mclog::tagInfo("DrawingCamera", "Color changed to index %d", color_index);
+
+        // 現在選択中の色ボタンの表示を更新
+        app->updateCurrentColorButton();
+
+        // 色を選択したらパレットを自動的に閉じる
+        app->togglePalette();
     }
+}
+
+void AppDrawingCamera::currentColorBtnEventHandler(lv_event_t* e)
+{
+    AppDrawingCamera* app = static_cast<AppDrawingCamera*>(lv_event_get_user_data(e));
+    app->togglePalette();
 }
 
 void AppDrawingCamera::cameraBtnEventHandler(lv_event_t* e)
@@ -280,7 +296,7 @@ void AppDrawingCamera::cameraBtnEventHandler(lv_event_t* e)
     }
 }
 
-void AppDrawingCamera::captureBtnEventHandler(lv_event_t* e)
+void AppDrawingCamera::cameraPreviewEventHandler(lv_event_t* e)
 {
     AppDrawingCamera* app = static_cast<AppDrawingCamera*>(lv_event_get_user_data(e));
     app->capturePhoto();
@@ -560,6 +576,32 @@ void AppDrawingCamera::capturePhoto()
     switchToDrawingMode();
 
     mclog::tagInfo(getAppInfo().name, "Photo captured and set as background");
+}
+
+void AppDrawingCamera::togglePalette()
+{
+    LvglLockGuard lock;
+
+    _palette_expanded = !_palette_expanded;
+
+    if (_palette_expanded) {
+        // パレットを表示
+        lv_obj_clear_flag(_color_palette, LV_OBJ_FLAG_HIDDEN);
+        mclog::tagInfo(getAppInfo().name, "Palette expanded");
+    } else {
+        // パレットを非表示
+        lv_obj_add_flag(_color_palette, LV_OBJ_FLAG_HIDDEN);
+        mclog::tagInfo(getAppInfo().name, "Palette collapsed");
+    }
+}
+
+void AppDrawingCamera::updateCurrentColorButton()
+{
+    LvglLockGuard lock;
+
+    if (_current_color_btn) {
+        lv_obj_set_style_bg_color(_current_color_btn, _current_color, 0);
+    }
 }
 
 AppDrawingCamera* AppDrawingCamera::getAppInstance(lv_event_t* e)

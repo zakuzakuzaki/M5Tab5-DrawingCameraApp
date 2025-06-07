@@ -28,23 +28,23 @@ public:
 
 private:
     // UI要素
-    lv_obj_t* _main_screen   = nullptr;
-    lv_obj_t* _canvas        = nullptr;
-    lv_obj_t* _color_palette = nullptr;
-    lv_obj_t* _camera_btn    = nullptr;
-    lv_obj_t* _back_btn      = nullptr;
-    lv_obj_t* _clear_btn     = nullptr;
+    lv_obj_t* _main_screen       = nullptr;
+    lv_obj_t* _canvas            = nullptr;
+    lv_obj_t* _color_palette     = nullptr;
+    lv_obj_t* _current_color_btn = nullptr;  // 現在選択中の色を表示するボタン
+    lv_obj_t* _camera_btn        = nullptr;
+    lv_obj_t* _back_btn          = nullptr;
+    lv_obj_t* _clear_btn         = nullptr;
 
     // カメラモード用UI
     lv_obj_t* _camera_screen   = nullptr;
     lv_obj_t* _camera_preview  = nullptr;  // キャンバスとして使用
-    lv_obj_t* _capture_btn     = nullptr;
     lv_obj_t* _camera_back_btn = nullptr;
 
     // 描画用データ
-    lv_draw_buf_t* _canvas_buffer      = nullptr;
-    lv_color_t _current_color          = lv_color_white();
-    lv_color_t _palette_colors[8];     // カラーパレットの色
+    lv_draw_buf_t* _canvas_buffer = nullptr;
+    lv_color_t _current_color     = lv_color_black();
+    lv_color_t _palette_colors[9];  // カラーパレットの色
     static constexpr int CANVAS_WIDTH  = 1280;
     static constexpr int CANVAS_HEIGHT = 720;
     static constexpr int BRUSH_SIZE    = 20;
@@ -53,6 +53,7 @@ private:
     enum AppState { STATE_DRAWING, STATE_CAMERA_PREVIEW, STATE_CAMERA_CAPTURE };
     AppState _current_state    = STATE_DRAWING;
     bool _has_background_image = false;
+    bool _palette_expanded     = false;  // パレットの展開状態
 
     // タッチ描画の補完用
     bool _is_drawing        = false;
@@ -67,8 +68,9 @@ private:
     // イベントハンドラ
     static void canvasEventHandler(lv_event_t* e);
     static void colorPaletteEventHandler(lv_event_t* e);
+    static void currentColorBtnEventHandler(lv_event_t* e);
     static void cameraBtnEventHandler(lv_event_t* e);
-    static void captureBtnEventHandler(lv_event_t* e);
+    static void cameraPreviewEventHandler(lv_event_t* e);
     static void backBtnEventHandler(lv_event_t* e);
     static void clearBtnEventHandler(lv_event_t* e);
 
@@ -82,6 +84,8 @@ private:
     void switchToDrawingMode();
     void switchToCameraMode();
     void capturePhoto();
+    void togglePalette();
+    void updateCurrentColorButton();
 
     // ユーティリティ
     AppDrawingCamera* getAppInstance(lv_event_t* e);
