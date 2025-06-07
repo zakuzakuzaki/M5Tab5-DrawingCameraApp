@@ -42,6 +42,15 @@ idf.py flash
 idf.py monitor
 ```
 
+## Development Tools
+
+### App Generation
+```bash
+# Create a new app from template
+cd app/apps
+python app_generator.py
+```
+
 ## Architecture
 
 ### Cross-Platform Design
@@ -51,7 +60,7 @@ idf.py monitor
 
 ### Key Components
 - **Mooncake Framework**: Application lifecycle management and UI framework
-- **LVGL**: Graphics library for UI rendering  
+- **LVGL v9.2.0**: Graphics library for UI rendering  
 - **HAL Interface**: Provides unified API for display, camera, IMU, power, audio, WiFi, and other hardware features
 - **Dependency Management**: `repos.json` and `fetch_repos.py` handle external dependencies
 
@@ -60,6 +69,17 @@ idf.py monitor
 - `app_launcher` provides the main UI for hardware testing and feature demonstration
 - Shared utilities in `app/apps/utils/` for audio, math, and UI components
 - Assets (images, fonts) stored in `app/assets/`
+- App registration via `app/apps/app_installer.h`
+
+### LVGL v9 API Notes
+When working with canvas/draw buffers, use the correct v9 API:
+```cpp
+// Correct v9 API for buffer access
+lv_draw_buf_t* buf = lv_canvas_get_draw_buf(canvas);
+uint32_t width = buf->header.w;   // NOT lv_draw_buf_get_width()
+uint32_t height = buf->header.h;  // NOT lv_draw_buf_get_height()
+uint8_t* data = buf->data;        // NOT lv_draw_buf_get_buf()
+```
 
 ### Hardware Features (ESP32-P4)
 - 1280x720 display with touch input
