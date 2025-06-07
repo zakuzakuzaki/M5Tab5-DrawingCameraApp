@@ -45,9 +45,9 @@ private:
     // 描画用データ
     lv_draw_buf_t* _canvas_buffer = nullptr;
     lv_color_t _current_color = lv_color_white();
-    static constexpr int CANVAS_WIDTH = 1280;
-    static constexpr int CANVAS_HEIGHT = 720;
-    static constexpr int BRUSH_SIZE = 8;
+    static constexpr int CANVAS_WIDTH = 720;
+    static constexpr int CANVAS_HEIGHT = 1280;
+    static constexpr int BRUSH_SIZE = 20;
     
     // 状態管理
     enum AppState {
@@ -57,6 +57,11 @@ private:
     };
     AppState _current_state = STATE_DRAWING;
     bool _has_background_image = false;
+    
+    // タッチ描画の補完用
+    bool _is_drawing = false;
+    lv_coord_t _last_draw_x = -1;
+    lv_coord_t _last_draw_y = -1;
     
     // 初期化メソッド
     void initDrawingScreen();
@@ -73,6 +78,7 @@ private:
     
     // 描画メソッド
     void drawOnCanvas(lv_coord_t x, lv_coord_t y);
+    void drawLine(lv_coord_t x1, lv_coord_t y1, lv_coord_t x2, lv_coord_t y2);
     void clearCanvas();
     void setBackgroundImage();
     
