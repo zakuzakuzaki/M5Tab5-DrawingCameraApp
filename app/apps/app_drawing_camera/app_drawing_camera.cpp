@@ -38,24 +38,7 @@ void AppDrawingCamera::onOpen()
 
 void AppDrawingCamera::onRunning()
 {
-    // カメラモード中の状態更新
-    if (_current_state == STATE_CAMERA_PREVIEW && _camera_info_label) {
-        LvglLockGuard lock;
-
-        static uint32_t last_update = 0;
-        uint32_t now                = GetHAL()->millis();
-
-        // 1秒毎に状態を更新
-        if (now - last_update > 1000) {
-            bool is_capturing = GetHAL()->isCameraCapturing();
-            if (is_capturing) {
-                lv_label_set_text(_camera_info_label, "CAMERA MODE\n1280x720\nCAPTURING");
-            } else {
-                lv_label_set_text(_camera_info_label, "CAMERA MODE\n1280x720\nNOT CAPTURING");
-            }
-            last_update = now;
-        }
-    }
+    // カメラモード中でも特に状態更新は不要
 }
 
 void AppDrawingCamera::onClose()
@@ -84,10 +67,20 @@ void AppDrawingCamera::initDrawingScreen()
                     lv_display_get_vertical_resolution(lv_display_get_default()));
     lv_obj_set_style_bg_color(_main_screen, lv_color_black(), 0);
 
+    // メイン画面のスクロールを無効化
+    lv_obj_set_scrollbar_mode(_main_screen, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_set_scroll_dir(_main_screen, LV_DIR_NONE);
+    lv_obj_clear_flag(_main_screen, LV_OBJ_FLAG_SCROLLABLE);
+
     // キャンバス作成（全画面サイズ）
     _canvas = lv_canvas_create(_main_screen);
     lv_obj_set_size(_canvas, CANVAS_WIDTH, CANVAS_HEIGHT);
     lv_obj_align(_canvas, LV_ALIGN_CENTER, 0, 0);  // 画面中央に配置
+
+    // キャンバスのスクロールを無効化
+    lv_obj_set_scrollbar_mode(_canvas, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_set_scroll_dir(_canvas, LV_DIR_NONE);
+    lv_obj_clear_flag(_canvas, LV_OBJ_FLAG_SCROLLABLE);
 
     // キャンバス用バッファ作成
     _canvas_buffer = lv_draw_buf_create(CANVAS_WIDTH, CANVAS_HEIGHT, LV_COLOR_FORMAT_RGB565, LV_STRIDE_AUTO);
@@ -102,45 +95,42 @@ void AppDrawingCamera::initDrawingScreen()
     lv_obj_add_event_cb(_canvas, canvasEventHandler, LV_EVENT_RELEASED, this);
     lv_obj_add_flag(_canvas, LV_OBJ_FLAG_CLICKABLE);
 
-    // カラーパレットコンテナ（下部に配置、縦向き最適化）
+    // カラーパレットコンテナ（左側に縦配置）
     _color_palette = lv_obj_create(_main_screen);
-    lv_obj_set_size(_color_palette, 400, 60);
-    lv_obj_align(_color_palette, LV_ALIGN_TOP_MID, 0, 20);
+    lv_obj_set_size(_color_palette, 120, 800);               // 幅と高さを入れ替え
+    lv_obj_align(_color_palette, LV_ALIGN_LEFT_MID, 20, 0);  // 左中央に配置
     lv_obj_set_style_bg_color(_color_palette, lv_color_hex(0x333333), 0);
     lv_obj_set_style_border_width(_color_palette, 2, 0);
     lv_obj_set_style_border_color(_color_palette, lv_color_white(), 0);
-    lv_obj_set_style_radius(_color_palette, 10, 0);
+    lv_obj_set_style_radius(_color_palette, 20, 0);
     lv_obj_move_foreground(_color_palette);  // 前面に移動
 
-    // カラーパレットの色設定
-    lv_color_t colors[] = {
-        lv_color_white(),       lv_color_black(),
-        lv_color_hex(0xFF0000),  // 赤
-        lv_color_hex(0x00FF00),  // 緑
-        lv_color_hex(0x0000FF),  // 青
-        lv_color_hex(0xFFFF00),  // 黄
-        lv_color_hex(0xFF00FF),  // マゼンタ
-        lv_color_hex(0x00FFFF),  // シアン
-        lv_color_hex(0x800080),  // 紫
-        lv_color_hex(0xFFA500)   // オレンジ
-    };
+    // カラーパレットの色設定（クラスメンバとして保存）
+    _palette_colors[0] = lv_color_white();
+    _palette_colors[1] = lv_color_hex(0xFF0000);  // 赤
+    _palette_colors[2] = lv_color_hex(0x00FF00);  // 緑
+    _palette_colors[3] = lv_color_hex(0x0000FF);  // 青
+    _palette_colors[4] = lv_color_hex(0xFFFF00);  // 黄
+    _palette_colors[5] = lv_color_hex(0xFF00FF);  // マゼンタ
+    _palette_colors[6] = lv_color_hex(0x00FFFF);  // シアン
+    _palette_colors[7] = lv_color_hex(0xFFA500);  // オレンジ
 
-    int color_count = sizeof(colors) / sizeof(colors[0]);
-    int btn_size    = 35;
-    int spacing     = (400 - (color_count * btn_size)) / (color_count + 1);
+    int color_count = 8;
+    int btn_size    = 70;                                                    // ボタンサイズは維持
+    int spacing     = (800 - (color_count * btn_size)) / (color_count + 1);  // 高さに合わせてスペース調整
 
     for (int i = 0; i < color_count; i++) {
         lv_obj_t* color_btn = lv_btn_create(_color_palette);
         lv_obj_set_size(color_btn, btn_size, btn_size);
-        lv_obj_set_pos(color_btn, spacing + i * (btn_size + spacing), 12);
-        lv_obj_set_style_bg_color(color_btn, colors[i], 0);
+        lv_obj_set_pos(color_btn, 25, spacing + i * (btn_size + spacing));  // x,yを入れ替えて縦配置
+        lv_obj_set_style_bg_color(color_btn, _palette_colors[i], 0);
         lv_obj_set_style_border_width(color_btn, 2, 0);
         lv_obj_set_style_border_color(color_btn, lv_color_hex(0x666666), 0);
         lv_obj_set_style_radius(color_btn, btn_size / 2, 0);
         lv_obj_add_event_cb(color_btn, colorPaletteEventHandler, LV_EVENT_CLICKED, this);
 
-        // 色データを保存
-        lv_obj_set_user_data(color_btn, &colors[i]);
+        // 色インデックスを保存（色のポインタではなく）
+        lv_obj_set_user_data(color_btn, (void*)(intptr_t)i);
     }
 
     // カメラボタン（上部右に配置）
@@ -211,18 +201,6 @@ void AppDrawingCamera::initCameraScreen()
     lv_obj_t* camera_back_label = lv_label_create(_camera_back_btn);
     lv_label_set_text(camera_back_label, "Back");
     lv_obj_center(camera_back_label);
-
-    // カメラ情報表示ラベル
-    _camera_info_label = lv_label_create(_camera_screen);
-    lv_obj_align(_camera_info_label, LV_ALIGN_TOP_RIGHT, -20, 20);
-    lv_label_set_text(_camera_info_label, "CAMERA MODE\n1280x720");
-    lv_obj_set_style_text_color(_camera_info_label, lv_color_white(), 0);
-    lv_obj_set_style_text_font(_camera_info_label, &lv_font_montserrat_16, 0);
-    lv_obj_set_style_bg_color(_camera_info_label, lv_color_hex(0x000000), 0);
-    lv_obj_set_style_bg_opa(_camera_info_label, LV_OPA_50, 0);
-    lv_obj_set_style_pad_all(_camera_info_label, 8, 0);
-    lv_obj_set_style_radius(_camera_info_label, 5, 0);
-    lv_obj_move_foreground(_camera_info_label);  // 前面に移動
 }
 
 void AppDrawingCamera::canvasEventHandler(lv_event_t* e)
@@ -282,11 +260,11 @@ void AppDrawingCamera::colorPaletteEventHandler(lv_event_t* e)
     AppDrawingCamera* app = static_cast<AppDrawingCamera*>(lv_event_get_user_data(e));
     lv_obj_t* btn         = static_cast<lv_obj_t*>(lv_event_get_target(e));
 
-    // 選択された色を取得
-    lv_color_t* color = static_cast<lv_color_t*>(lv_obj_get_user_data(btn));
-    if (color) {
-        app->_current_color = *color;
-        mclog::tagInfo("DrawingCamera", "Color changed");
+    // 選択された色のインデックスを取得
+    int color_index = (int)(intptr_t)lv_obj_get_user_data(btn);
+    if (color_index >= 0 && color_index < 8) {
+        app->_current_color = app->_palette_colors[color_index];
+        mclog::tagInfo("DrawingCamera", "Color changed to index %d", color_index);
     }
 }
 
@@ -333,17 +311,11 @@ void AppDrawingCamera::drawOnCanvas(lv_coord_t x, lv_coord_t y)
     if (!buf || !buf->data) return;
 
     // 高速定数
-    static const int radius      = BRUSH_SIZE / 2;
-    static const int diameter    = BRUSH_SIZE;
-    static uint16_t cached_color = 0;
-    static uint16_t color16      = 0;
+    static const int radius   = BRUSH_SIZE / 2;
+    static const int diameter = BRUSH_SIZE;
 
-    // 色変換キャッシュ（RGB565変換は重い）
-    uint16_t current_color16 = lv_color_to_u16(_current_color);
-    if (cached_color != current_color16) {
-        cached_color = current_color16;
-        color16      = current_color16;
-    }
+    // 色をRGB565形式に変換
+    uint16_t color16 = lv_color_to_u16(_current_color);
 
     // 高速バッファアクセス
     uint32_t buf_width   = buf->header.w;

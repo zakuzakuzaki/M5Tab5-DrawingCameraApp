@@ -36,15 +36,15 @@ private:
     lv_obj_t* _clear_btn     = nullptr;
 
     // カメラモード用UI
-    lv_obj_t* _camera_screen     = nullptr;
-    lv_obj_t* _camera_preview    = nullptr;  // キャンバスとして使用
-    lv_obj_t* _capture_btn       = nullptr;
-    lv_obj_t* _camera_back_btn   = nullptr;
-    lv_obj_t* _camera_info_label = nullptr;
+    lv_obj_t* _camera_screen   = nullptr;
+    lv_obj_t* _camera_preview  = nullptr;  // キャンバスとして使用
+    lv_obj_t* _capture_btn     = nullptr;
+    lv_obj_t* _camera_back_btn = nullptr;
 
     // 描画用データ
     lv_draw_buf_t* _canvas_buffer      = nullptr;
     lv_color_t _current_color          = lv_color_white();
+    lv_color_t _palette_colors[8];     // カラーパレットの色
     static constexpr int CANVAS_WIDTH  = 1280;
     static constexpr int CANVAS_HEIGHT = 720;
     static constexpr int BRUSH_SIZE    = 20;
