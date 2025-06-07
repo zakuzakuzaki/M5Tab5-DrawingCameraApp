@@ -102,10 +102,48 @@ void AppDrawingCamera::initDrawingScreen()
     lv_obj_add_event_cb(_canvas, canvasEventHandler, LV_EVENT_RELEASED, this);
     lv_obj_add_flag(_canvas, LV_OBJ_FLAG_CLICKABLE);
 
-    // カラーパレット作成（キャンバスの上に重ねて表示）
-    initColorPalette();
+    // カラーパレットコンテナ（下部に配置、縦向き最適化）
+    _color_palette = lv_obj_create(_main_screen);
+    lv_obj_set_size(_color_palette, 400, 60);
+    lv_obj_align(_color_palette, LV_ALIGN_TOP_MID, 0, 20);
+    lv_obj_set_style_bg_color(_color_palette, lv_color_hex(0x333333), 0);
+    lv_obj_set_style_border_width(_color_palette, 2, 0);
+    lv_obj_set_style_border_color(_color_palette, lv_color_white(), 0);
+    lv_obj_set_style_radius(_color_palette, 10, 0);
+    lv_obj_move_foreground(_color_palette);  // 前面に移動
 
-    // カメラボタン（キャンバスの上に重ねて表示）
+    // カラーパレットの色設定
+    lv_color_t colors[] = {
+        lv_color_white(),       lv_color_black(),
+        lv_color_hex(0xFF0000),  // 赤
+        lv_color_hex(0x00FF00),  // 緑
+        lv_color_hex(0x0000FF),  // 青
+        lv_color_hex(0xFFFF00),  // 黄
+        lv_color_hex(0xFF00FF),  // マゼンタ
+        lv_color_hex(0x00FFFF),  // シアン
+        lv_color_hex(0x800080),  // 紫
+        lv_color_hex(0xFFA500)   // オレンジ
+    };
+
+    int color_count = sizeof(colors) / sizeof(colors[0]);
+    int btn_size    = 35;
+    int spacing     = (400 - (color_count * btn_size)) / (color_count + 1);
+
+    for (int i = 0; i < color_count; i++) {
+        lv_obj_t* color_btn = lv_btn_create(_color_palette);
+        lv_obj_set_size(color_btn, btn_size, btn_size);
+        lv_obj_set_pos(color_btn, spacing + i * (btn_size + spacing), 12);
+        lv_obj_set_style_bg_color(color_btn, colors[i], 0);
+        lv_obj_set_style_border_width(color_btn, 2, 0);
+        lv_obj_set_style_border_color(color_btn, lv_color_hex(0x666666), 0);
+        lv_obj_set_style_radius(color_btn, btn_size / 2, 0);
+        lv_obj_add_event_cb(color_btn, colorPaletteEventHandler, LV_EVENT_CLICKED, this);
+
+        // 色データを保存
+        lv_obj_set_user_data(color_btn, &colors[i]);
+    }
+
+    // カメラボタン（上部右に配置）
     _camera_btn = lv_btn_create(_main_screen);
     lv_obj_set_size(_camera_btn, 80, 40);
     lv_obj_align(_camera_btn, LV_ALIGN_BOTTOM_RIGHT, -20, -20);
@@ -116,7 +154,7 @@ void AppDrawingCamera::initDrawingScreen()
     lv_label_set_text(camera_label, "Camera");
     lv_obj_center(camera_label);
 
-    // クリアボタン（キャンバスの上に重ねて表示）
+    // クリアボタン（上部左に配置）
     _clear_btn = lv_btn_create(_main_screen);
     lv_obj_set_size(_clear_btn, 60, 40);
     lv_obj_align(_clear_btn, LV_ALIGN_BOTTOM_MID, 0, -20);
@@ -146,7 +184,7 @@ void AppDrawingCamera::initCameraScreen()
     // HALがバッファを設定するので、ここでは初期化のみ
     lv_canvas_fill_bg(_camera_preview, lv_color_black(), LV_OPA_COVER);
 
-    // 撮影ボタン（カメラプレビューの上に重ねて表示）
+    // 撮影ボタン（上部中央に配置）
     _capture_btn = lv_btn_create(_camera_screen);
     lv_obj_set_size(_capture_btn, 100, 60);  // 少し大きくして押しやすく
     lv_obj_align(_capture_btn, LV_ALIGN_BOTTOM_MID, 0, -20);
@@ -163,7 +201,7 @@ void AppDrawingCamera::initCameraScreen()
     lv_obj_set_style_text_color(capture_label, lv_color_white(), 0);
     lv_obj_set_style_text_font(capture_label, &lv_font_montserrat_18, 0);
 
-    // 戻るボタン（カメラプレビューの上に重ねて表示）
+    // 戻るボタン（上部左に配置）
     _camera_back_btn = lv_btn_create(_camera_screen);
     lv_obj_set_size(_camera_back_btn, 80, 50);
     lv_obj_align(_camera_back_btn, LV_ALIGN_BOTTOM_LEFT, 20, -20);
@@ -187,64 +225,6 @@ void AppDrawingCamera::initCameraScreen()
     lv_obj_move_foreground(_camera_info_label);  // 前面に移動
 }
 
-void AppDrawingCamera::initColorPalette()
-{
-    LvglLockGuard lock;
-
-    // カラーパレットコンテナ（2倍の幅）
-    _color_palette = lv_obj_create(_main_screen);
-    lv_obj_set_size(_color_palette, 800, 120);  // 幅と高さを2倍
-    lv_obj_align(_color_palette, LV_ALIGN_TOP_MID, 0, 20);
-    lv_obj_set_style_bg_color(_color_palette, lv_color_hex(0x333333), 0);
-    lv_obj_set_style_border_width(_color_palette, 2, 0);
-    lv_obj_set_style_border_color(_color_palette, lv_color_white(), 0);
-    lv_obj_set_style_radius(_color_palette, 10, 0);
-    lv_obj_move_foreground(_color_palette);  // 前面に移動
-
-    // カラーパレットの色設定（2倍の色数）
-    static lv_color_t colors[] = {
-        // 1行目：基本色
-        lv_color_white(),        lv_color_black(),        lv_color_hex(0xFF0000),  // 白、黒、赤
-        lv_color_hex(0x00FF00),  lv_color_hex(0x0000FF),  lv_color_hex(0xFFFF00),  // 緑、青、黄
-        lv_color_hex(0xFF00FF),  lv_color_hex(0x00FFFF),  lv_color_hex(0xFF8000),  // マゼンタ、シアン、オレンジ
-        lv_color_hex(0x800080),  // 紫
-        
-        // 2行目：補色・中間色
-        lv_color_hex(0x808080),  lv_color_hex(0x400000),  lv_color_hex(0x800000),  // グレー、暗赤、茶色
-        lv_color_hex(0x008000),  lv_color_hex(0x000080),  lv_color_hex(0x808000),  // 緑、紺、オリーブ
-        lv_color_hex(0x800040),  lv_color_hex(0x008080),  lv_color_hex(0xFF4000),  // 深紫、ティール、朱色
-        lv_color_hex(0x4000FF)   // インディゴ
-    };
-
-    int color_count = sizeof(colors) / sizeof(colors[0]);
-    int btn_size = 35;
-    int cols = 10;  // 1行10色
-    int rows = 2;   // 2行
-    int h_spacing = (800 - (cols * btn_size)) / (cols + 1);
-    int v_spacing = 10;
-
-    for (int i = 0; i < color_count; i++) {
-        lv_obj_t* color_btn = lv_btn_create(_color_palette);
-        lv_obj_set_size(color_btn, btn_size, btn_size);
-        
-        // 2行配置の計算
-        int row = i / cols;
-        int col = i % cols;
-        int x = h_spacing + col * (btn_size + h_spacing);
-        int y = v_spacing + row * (btn_size + v_spacing);
-        
-        lv_obj_set_pos(color_btn, x, y);
-        lv_obj_set_style_bg_color(color_btn, colors[i], 0);
-        lv_obj_set_style_border_width(color_btn, 2, 0);
-        lv_obj_set_style_border_color(color_btn, lv_color_hex(0x666666), 0);
-        lv_obj_set_style_radius(color_btn, btn_size / 2, 0);
-        lv_obj_add_event_cb(color_btn, colorPaletteEventHandler, LV_EVENT_CLICKED, this);
-
-        // 色データを保存（static配列なので安全）
-        lv_obj_set_user_data(color_btn, &colors[i]);
-    }
-}
-
 void AppDrawingCamera::canvasEventHandler(lv_event_t* e)
 {
     AppDrawingCamera* app      = static_cast<AppDrawingCamera*>(lv_event_get_user_data(e));
@@ -261,8 +241,8 @@ void AppDrawingCamera::canvasEventHandler(lv_event_t* e)
     // UI要素の領域をチェック（描画を避ける）
     bool is_ui_area = false;
 
-    // カラーパレット領域（上部）- 拡大したパレットに対応
-    if (canvas_y >= 20 && canvas_y <= 140 && canvas_x >= 240 && canvas_x <= 1040) {
+    // カラーパレット領域（上部）
+    if (canvas_y >= 20 && canvas_y <= 80 && canvas_x >= 440 && canvas_x <= 840) {
         is_ui_area = true;
     }
 
@@ -306,11 +286,7 @@ void AppDrawingCamera::colorPaletteEventHandler(lv_event_t* e)
     lv_color_t* color = static_cast<lv_color_t*>(lv_obj_get_user_data(btn));
     if (color) {
         app->_current_color = *color;
-        
-        // 色選択のデバッグ情報
-        uint16_t color16 = lv_color_to_u16(*color);
-        mclog::tagInfo("DrawingCamera", "Color selected: R=%d G=%d B=%d -> RGB565=0x%04X", 
-                      color->red, color->green, color->blue, color16);
+        mclog::tagInfo("DrawingCamera", "Color changed");
     }
 }
 
@@ -362,15 +338,11 @@ void AppDrawingCamera::drawOnCanvas(lv_coord_t x, lv_coord_t y)
     static uint16_t cached_color = 0;
     static uint16_t color16      = 0;
 
-    // 色変換最適化（RGB565高精度変換）
+    // 色変換キャッシュ（RGB565変換は重い）
     uint16_t current_color16 = lv_color_to_u16(_current_color);
     if (cached_color != current_color16) {
         cached_color = current_color16;
-        color16 = current_color16;
-        
-        // デバッグ：選択色と描画色を確認
-        mclog::tagInfo("DrawingCamera", "Color: R=%d G=%d B=%d -> RGB565=0x%04X", 
-                      _current_color.red, _current_color.green, _current_color.blue, color16);
+        color16      = current_color16;
     }
 
     // 高速バッファアクセス
