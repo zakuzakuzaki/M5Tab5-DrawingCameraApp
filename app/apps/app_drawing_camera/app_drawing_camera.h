@@ -6,7 +6,6 @@
 #pragma once
 #include <mooncake.h>
 #include <lvgl.h>
-#include <memory>
 
 /**
  * @brief Drawing Camera App - お絵描きカメラアプリ
@@ -45,7 +44,7 @@ private:
     lv_draw_buf_t* _canvas_buffer     = nullptr;
     lv_draw_buf_t* _background_buffer = nullptr;  // 背景画像保存用
     lv_color_t _current_color         = lv_color_black();
-    lv_color_t _palette_colors[10];   // カラーパレットの色
+    lv_color_t _palette_colors[10];  // カラーパレットの色
     static constexpr int CANVAS_WIDTH  = 1280;
     static constexpr int CANVAS_HEIGHT = 720;
     static constexpr int BRUSH_SIZE    = 20;
@@ -87,7 +86,4 @@ private:
     void capturePhoto();
     void togglePalette();
     void updateCurrentColorButton();
-
-    // ユーティリティ
-    AppDrawingCamera* getAppInstance(lv_event_t* e);
 };
