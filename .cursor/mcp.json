@@ -1,0 +1,14 @@
+{
+    "mcpServers": {
+      "claude_code": {
+        "command": "wsl /home/ubuntu/.nvm/versions/node/v20.18.0/bin/claude",
+        "args": ["mcp", "serve","-p","3000"],
+        "env": {
+          "WSL_HOST": "localhost:3000",
+          "CLAUDE_CODE_USE_BEDROCK": "1",
+          "DISABLE_PROMPT_CACHING": "1",
+          "ANTHROPIC_MODEL": "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
+        }
+      }      
+    }
+  }

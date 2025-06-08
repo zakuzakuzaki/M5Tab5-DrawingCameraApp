@@ -10,6 +10,7 @@
 #include "app_template/app_template.h"
 #include "app_launcher/app_launcher.h"
 #include "app_startup_anim/app_startup_anim.h"
+#include "app_drawing_camera/app_drawing_camera.h"
 /* Header files locator (Don't remove) */
 
 // Start boot anim app and wait for it to finish
@@ -37,5 +38,6 @@ inline void on_install_apps()
     // 安装 App
     // mooncake::GetMooncake().installApp(std::make_unique<AppTemplate>());
     mooncake::GetMooncake().installApp(std::make_unique<AppLauncher>());
+    mooncake::GetMooncake().installApp(std::make_unique<AppDrawingCamera>());
     /* Install app locator (Don't remove) */
 }

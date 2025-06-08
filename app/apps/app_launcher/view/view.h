@@ -287,6 +287,20 @@ private:
  * @brief
  *
  */
+class PanelDrawingCamera : public PanelBase {
+public:
+    void init() override;
+    void update(bool isStacked) override;
+
+private:
+    std::unique_ptr<smooth_ui_toolkit::lvgl_cpp::Container> _btn_drawing_camera;
+    std::unique_ptr<ui::Window> _window;
+};
+
+/**
+ * @brief
+ *
+ */
 class LauncherView {
 public:
     void init();
