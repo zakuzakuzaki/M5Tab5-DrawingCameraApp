@@ -51,6 +51,21 @@ cd app/apps
 python app_generator.py
 ```
 
+### Development Workflow
+```bash
+# Always fetch dependencies first (before any development)
+python ./fetch_repos.py
+
+# Development cycle: Desktop testing first, then ESP32-P4
+mkdir build && cd build
+cmake .. && make -j8
+./desktop/app_desktop_build
+
+# Deploy to hardware after desktop testing
+cd ../platforms/tab5
+idf.py build flash monitor
+```
+
 ## Architecture
 
 ### Cross-Platform Design
@@ -71,6 +86,11 @@ python app_generator.py
 - Assets (images, fonts) stored in `app/assets/`
 - App registration via `app/apps/app_installer.h`
 
+### Mooncake App Framework
+- **App Lifecycle**: Apps inherit from `mooncake::AppAbility` with `onCreate()` → `onOpen()` → `onRunning()` → `onClose()` lifecycle
+- **Registration**: Apps are registered in `app/apps/app_installer.h` via `mooncake::GetMooncake().installApp()`
+- **Thread Safety**: Always use `LvglLockGuard lock;` before LVGL operations
+
 ### LVGL v9 API Notes
 When working with canvas/draw buffers, use the correct v9 API:
 ```cpp
@@ -79,6 +99,10 @@ lv_draw_buf_t* buf = lv_canvas_get_draw_buf(canvas);
 uint32_t width = buf->header.w;   // NOT lv_draw_buf_get_width()
 uint32_t height = buf->header.h;  // NOT lv_draw_buf_get_height()
 uint8_t* data = buf->data;        // NOT lv_draw_buf_get_buf()
+
+// Always use locks for thread safety
+LvglLockGuard lock;
+// ... LVGL operations here ...
 ```
 
 ### Hardware Features (ESP32-P4)
@@ -88,5 +112,13 @@ uint8_t* data = buf->data;        // NOT lv_draw_buf_get_buf()
 - Audio recording/playback with multiple microphones
 - WiFi, USB-A/C, SD card, RTC
 - GPIO and I2C interfaces
+
+### Development Guidelines
+- **Platform Testing**: Always test on desktop before ESP32-P4 deployment
+- **Resource Management**: Implement proper cleanup in app `onClose()` lifecycle method
+- **Buffer Access**: Use LVGL v9 direct buffer access patterns shown above
+- **Camera Integration**: Use HAL camera interface (`startCameraCapture()`, `stopCameraCapture()`, `isCameraCapturing()`)
+- **State Management**: Event-driven architecture with static callbacks and proper type casting
+- **Performance**: Direct buffer manipulation for drawing operations, partial screen updates with `lv_obj_invalidate_area()`
 
 The HAL pattern allows the same application code to run on desktop for development and on hardware for production deployment.
