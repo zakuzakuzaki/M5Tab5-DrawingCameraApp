@@ -7,25 +7,13 @@
 #include <mooncake.h>
 #include <memory>
 #include <hal/hal.h>
-#include "app_template/app_template.h"
-#include "app_launcher/app_launcher.h"
-#include "app_startup_anim/app_startup_anim.h"
 #include "app_drawing_camera/app_drawing_camera.h"
 /* Header files locator (Don't remove) */
 
-// Start boot anim app and wait for it to finish
+// Simplified startup - no animation for drawing app
 inline void on_startup_anim()
 {
-    auto app_id = mooncake::GetMooncake().installApp(std::make_unique<AppStartupAnim>());
-    mooncake::GetMooncake().openApp(app_id);
-    while (1) {
-        mooncake::GetMooncake().update();
-        if (mooncake::GetMooncake().getAppCurrentState(app_id) == mooncake::AppAbility::StateSleeping) {
-            break;
-        }
-        GetHAL()->delay(1);
-    }
-    mooncake::GetMooncake().uninstallApp(app_id);
+    // Skip startup animation for drawing app
 }
 
 /**
@@ -35,9 +23,7 @@ inline void on_startup_anim()
  */
 inline void on_install_apps()
 {
-    // 安装 App
-    // mooncake::GetMooncake().installApp(std::make_unique<AppTemplate>());
-    mooncake::GetMooncake().installApp(std::make_unique<AppLauncher>());
+    // Install drawing camera app only
     mooncake::GetMooncake().installApp(std::make_unique<AppDrawingCamera>());
     /* Install app locator (Don't remove) */
 }

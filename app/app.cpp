@@ -28,6 +28,11 @@ void app::Init(InitCallback_t callback)
 
     on_startup_anim();
     on_install_apps();
+    
+    // Auto-open drawing camera app (app ID starts from 0)
+    if (GetMooncake().getAppNum() > 0) {
+        GetMooncake().openApp(0);
+    }
 }
 
 void app::Update()
