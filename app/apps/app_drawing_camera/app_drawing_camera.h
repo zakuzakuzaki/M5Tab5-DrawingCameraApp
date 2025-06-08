@@ -42,9 +42,10 @@ private:
     lv_obj_t* _camera_back_btn = nullptr;
 
     // 描画用データ
-    lv_draw_buf_t* _canvas_buffer = nullptr;
-    lv_color_t _current_color     = lv_color_black();
-    lv_color_t _palette_colors[9];  // カラーパレットの色
+    lv_draw_buf_t* _canvas_buffer     = nullptr;
+    lv_draw_buf_t* _background_buffer = nullptr;  // 背景画像保存用
+    lv_color_t _current_color         = lv_color_black();
+    lv_color_t _palette_colors[10];   // カラーパレットの色
     static constexpr int CANVAS_WIDTH  = 1280;
     static constexpr int CANVAS_HEIGHT = 720;
     static constexpr int BRUSH_SIZE    = 20;

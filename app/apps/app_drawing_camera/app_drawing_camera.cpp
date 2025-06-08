@@ -55,6 +55,10 @@ void AppDrawingCamera::onClose()
         lv_draw_buf_destroy(_canvas_buffer);
         _canvas_buffer = nullptr;
     }
+    if (_background_buffer) {
+        lv_draw_buf_destroy(_background_buffer);
+        _background_buffer = nullptr;
+    }
 }
 
 void AppDrawingCamera::initDrawingScreen()
@@ -86,6 +90,9 @@ void AppDrawingCamera::initDrawingScreen()
     _canvas_buffer = lv_draw_buf_create(CANVAS_WIDTH, CANVAS_HEIGHT, LV_COLOR_FORMAT_RGB565, LV_STRIDE_AUTO);
     lv_canvas_set_draw_buf(_canvas, _canvas_buffer);
 
+    // 背景画像保存用バッファ作成
+    _background_buffer = lv_draw_buf_create(CANVAS_WIDTH, CANVAS_HEIGHT, LV_COLOR_FORMAT_RGB565, LV_STRIDE_AUTO);
+
     // キャンバスを白で初期化
     lv_canvas_fill_bg(_canvas, lv_color_white(), LV_OPA_COVER);
 
@@ -108,14 +115,21 @@ void AppDrawingCamera::initDrawingScreen()
     lv_obj_set_style_border_color(_current_color_btn, lv_color_hex(0x666666), 0);
     lv_obj_set_style_radius(_current_color_btn, 40, 0);
 
-    // カラーパレットコンテナ（最初は非表示）
+    // カラーパレットコンテナ（横方向展開、最初は非表示）
     _color_palette = lv_obj_create(_main_screen);
-    lv_obj_set_size(_color_palette, 120, 800);
-    lv_obj_align(_color_palette, LV_ALIGN_LEFT_MID, 0, 0);
+    lv_obj_set_size(_color_palette, 800, 120);  // 横長に変更
+    lv_obj_align(_color_palette, LV_ALIGN_TOP_MID, 0, 120);  // 上部中央に配置
     lv_obj_set_style_bg_color(_color_palette, lv_color_hex(0x333333), 0);
     lv_obj_set_style_border_width(_color_palette, 2, 0);
     lv_obj_set_style_border_color(_color_palette, lv_color_white(), 0);
     lv_obj_set_style_radius(_color_palette, 20, 0);
+    lv_obj_set_style_pad_all(_color_palette, 0, 0);  // パディングを0に設定
+
+    // スクロール設定（横方向）
+    lv_obj_set_scrollbar_mode(_color_palette, LV_SCROLLBAR_MODE_AUTO);
+    lv_obj_set_scroll_dir(_color_palette, LV_DIR_HOR);  // 横スクロール
+    lv_obj_add_flag(_color_palette, LV_OBJ_FLAG_SCROLLABLE);
+
     lv_obj_move_foreground(_color_palette);  // 前面に移動
 
     // 最初は非表示
@@ -128,18 +142,21 @@ void AppDrawingCamera::initDrawingScreen()
     _palette_colors[3] = lv_color_hex(0x00FF00);  // 緑
     _palette_colors[4] = lv_color_hex(0x0000FF);  // 青
     _palette_colors[5] = lv_color_hex(0xFFFF00);  // 黄
-    _palette_colors[6] = lv_color_hex(0xFF00FF);  // マゼンタ
-    _palette_colors[7] = lv_color_hex(0x00FFFF);  // シアン
+    _palette_colors[6] = lv_color_hex(0xE88FCC);  // ピンク
+    _palette_colors[7] = lv_color_hex(0xCC33CC);  // 紫
     _palette_colors[8] = lv_color_hex(0xFFA500);  // オレンジ
+    _palette_colors[9] = lv_color_hex(0x965534);  // 茶色
 
-    int color_count = 9;
-    int btn_size    = 70;
-    int spacing     = (800 - (color_count * btn_size)) / (color_count + 1);
+    int color_count    = 10;
+    int btn_size       = 70;
+    int palette_height = 120;
+    int spacing        = (800 - (color_count * btn_size)) / (color_count + 1);  // 横方向のスペース
+    int btn_y          = (palette_height - btn_size) / 2;  // パレット内で縦中央に配置
 
     for (int i = 0; i < color_count; i++) {
         lv_obj_t* color_btn = lv_btn_create(_color_palette);
         lv_obj_set_size(color_btn, btn_size, btn_size);
-        lv_obj_set_pos(color_btn, 25, spacing + i * (btn_size + spacing));
+        lv_obj_set_pos(color_btn, spacing + i * (btn_size + spacing), btn_y);  // 横配置に変更
         lv_obj_set_style_bg_color(color_btn, _palette_colors[i], 0);
         lv_obj_set_style_border_width(color_btn, 2, 0);
         lv_obj_set_style_border_color(color_btn, lv_color_hex(0x666666), 0);
@@ -223,13 +240,27 @@ void AppDrawingCamera::canvasEventHandler(lv_event_t* e)
     // UI要素の領域をチェック（描画を避ける）
     bool is_ui_area = false;
 
-    // カラーパレット領域（上部）
-    if (canvas_y >= 20 && canvas_y <= 80 && canvas_x >= 440 && canvas_x <= 840) {
+    // 色選択ボタン領域（左上）
+    if (canvas_x >= 20 && canvas_x <= 100 && canvas_y >= 20 && canvas_y <= 100) {
         is_ui_area = true;
     }
 
-    // ボタン領域（下部）
-    if (canvas_y >= CANVAS_HEIGHT - 60) {
+    // クリアボタン領域（右上）
+    if (canvas_x >= CANVAS_WIDTH - 140 && canvas_x <= CANVAS_WIDTH - 20 && 
+        canvas_y >= 20 && canvas_y <= 100) {
+        is_ui_area = true;
+    }
+
+    // カメラボタン領域（右下）
+    if (canvas_x >= CANVAS_WIDTH - 180 && canvas_x <= CANVAS_WIDTH - 20 && 
+        canvas_y >= CANVAS_HEIGHT - 100 && canvas_y <= CANVAS_HEIGHT - 20) {
+        is_ui_area = true;
+    }
+
+    // 横展開パレット領域（上部中央、展開時のみ）
+    if (app->_palette_expanded && 
+        canvas_y >= 120 && canvas_y <= 240 && 
+        canvas_x >= 200 && canvas_x <= 1080) {
         is_ui_area = true;
     }
 
@@ -266,7 +297,7 @@ void AppDrawingCamera::colorPaletteEventHandler(lv_event_t* e)
 
     // 選択された色のインデックスを取得
     int color_index = (int)(intptr_t)lv_obj_get_user_data(btn);
-    if (color_index >= 0 && color_index < 9) {
+    if (color_index >= 0 && color_index < 10) {
         app->_current_color = app->_palette_colors[color_index];
         mclog::tagInfo("DrawingCamera", "Color changed to index %d", color_index);
 
@@ -436,12 +467,19 @@ void AppDrawingCamera::clearCanvas()
 {
     LvglLockGuard lock;
 
-    if (_has_background_image) {
-        // 背景画像がある場合は背景を再設定
-        setBackgroundImage();
+    if (_has_background_image && _background_buffer) {
+        // 保存された背景画像を復元
+        lv_draw_buf_t* canvas_buf = lv_canvas_get_draw_buf(_canvas);
+        if (canvas_buf && canvas_buf->data && _background_buffer->data) {
+            uint32_t buffer_size = CANVAS_WIDTH * CANVAS_HEIGHT * 2;  // RGB565 = 2 bytes per pixel
+            memcpy(canvas_buf->data, _background_buffer->data, buffer_size);
+            lv_obj_invalidate(_canvas);
+            mclog::tagInfo(getAppInfo().name, "Background image restored from saved buffer");
+        }
     } else {
         // 白で塗りつぶし
         lv_canvas_fill_bg(_canvas, lv_color_white(), LV_OPA_COVER);
+        mclog::tagInfo(getAppInfo().name, "Canvas cleared to white");
     }
 }
 
@@ -505,6 +543,16 @@ void AppDrawingCamera::setBackgroundImage()
 
             // キャンバスを無効化して再描画を促す
             lv_obj_invalidate(_canvas);
+
+            // 背景画像を保存用バッファにコピー
+            if (_background_buffer && _background_buffer->data) {
+                lv_draw_buf_t* canvas_buf = lv_canvas_get_draw_buf(_canvas);
+                if (canvas_buf && canvas_buf->data) {
+                    uint32_t buffer_size = CANVAS_WIDTH * CANVAS_HEIGHT * 2;  // RGB565 = 2 bytes per pixel
+                    memcpy(_background_buffer->data, canvas_buf->data, buffer_size);
+                    mclog::tagInfo(getAppInfo().name, "Background image saved to buffer");
+                }
+            }
 
         } else {
             mclog::tagError(getAppInfo().name, "Failed to get draw buffers");
