@@ -5,10 +5,8 @@
  */
 #include "app_drawing_camera.h"
 #include <hal/hal.h>
-#include <mooncake.h>
 #include <mooncake_log.h>
-#include <cstring>  // memcpy用
-#include <cmath>    // sqrt用
+#include <cstring>
 
 using namespace mooncake;
 
@@ -38,7 +36,6 @@ void AppDrawingCamera::onOpen()
 
 void AppDrawingCamera::onRunning()
 {
-    // カメラモード中でも特に状態更新は不要
 }
 
 void AppDrawingCamera::onClose()
@@ -117,7 +114,7 @@ void AppDrawingCamera::initDrawingScreen()
 
     // カラーパレットコンテナ（横方向展開、最初は非表示）
     _color_palette = lv_obj_create(_main_screen);
-    lv_obj_set_size(_color_palette, 800, 120);  // 横長に変更
+    lv_obj_set_size(_color_palette, 800, 120);               // 横長に変更
     lv_obj_align(_color_palette, LV_ALIGN_TOP_MID, 0, 120);  // 上部中央に配置
     lv_obj_set_style_bg_color(_color_palette, lv_color_hex(0x333333), 0);
     lv_obj_set_style_border_width(_color_palette, 2, 0);
@@ -151,7 +148,7 @@ void AppDrawingCamera::initDrawingScreen()
     int btn_size       = 70;
     int palette_height = 120;
     int spacing        = (800 - (color_count * btn_size)) / (color_count + 1);  // 横方向のスペース
-    int btn_y          = (palette_height - btn_size) / 2;  // パレット内で縦中央に配置
+    int btn_y          = (palette_height - btn_size) / 2;                       // パレット内で縦中央に配置
 
     for (int i = 0; i < color_count; i++) {
         lv_obj_t* color_btn = lv_btn_create(_color_palette);
@@ -246,21 +243,18 @@ void AppDrawingCamera::canvasEventHandler(lv_event_t* e)
     }
 
     // クリアボタン領域（右上）
-    if (canvas_x >= CANVAS_WIDTH - 140 && canvas_x <= CANVAS_WIDTH - 20 && 
-        canvas_y >= 20 && canvas_y <= 100) {
+    if (canvas_x >= CANVAS_WIDTH - 140 && canvas_x <= CANVAS_WIDTH - 20 && canvas_y >= 20 && canvas_y <= 100) {
         is_ui_area = true;
     }
 
     // カメラボタン領域（右下）
-    if (canvas_x >= CANVAS_WIDTH - 180 && canvas_x <= CANVAS_WIDTH - 20 && 
-        canvas_y >= CANVAS_HEIGHT - 100 && canvas_y <= CANVAS_HEIGHT - 20) {
+    if (canvas_x >= CANVAS_WIDTH - 180 && canvas_x <= CANVAS_WIDTH - 20 && canvas_y >= CANVAS_HEIGHT - 100 &&
+        canvas_y <= CANVAS_HEIGHT - 20) {
         is_ui_area = true;
     }
 
     // 横展開パレット領域（上部中央、展開時のみ）
-    if (app->_palette_expanded && 
-        canvas_y >= 120 && canvas_y <= 240 && 
-        canvas_x >= 200 && canvas_x <= 1080) {
+    if (app->_palette_expanded && canvas_y >= 120 && canvas_y <= 240 && canvas_x >= 200 && canvas_x <= 1080) {
         is_ui_area = true;
     }
 
@@ -471,7 +465,7 @@ void AppDrawingCamera::clearCanvas()
         // 保存された背景画像を復元
         lv_draw_buf_t* canvas_buf = lv_canvas_get_draw_buf(_canvas);
         if (canvas_buf && canvas_buf->data && _background_buffer->data) {
-            uint32_t buffer_size = CANVAS_WIDTH * CANVAS_HEIGHT * 2;  // RGB565 = 2 bytes per pixel
+            uint32_t buffer_size = CANVAS_WIDTH * CANVAS_HEIGHT * 2;
             memcpy(canvas_buf->data, _background_buffer->data, buffer_size);
             lv_obj_invalidate(_canvas);
             mclog::tagInfo(getAppInfo().name, "Background image restored from saved buffer");
@@ -548,7 +542,7 @@ void AppDrawingCamera::setBackgroundImage()
             if (_background_buffer && _background_buffer->data) {
                 lv_draw_buf_t* canvas_buf = lv_canvas_get_draw_buf(_canvas);
                 if (canvas_buf && canvas_buf->data) {
-                    uint32_t buffer_size = CANVAS_WIDTH * CANVAS_HEIGHT * 2;  // RGB565 = 2 bytes per pixel
+                    uint32_t buffer_size = CANVAS_WIDTH * CANVAS_HEIGHT * 2;
                     memcpy(_background_buffer->data, canvas_buf->data, buffer_size);
                     mclog::tagInfo(getAppInfo().name, "Background image saved to buffer");
                 }
@@ -650,9 +644,4 @@ void AppDrawingCamera::updateCurrentColorButton()
     if (_current_color_btn) {
         lv_obj_set_style_bg_color(_current_color_btn, _current_color, 0);
     }
-}
-
-AppDrawingCamera* AppDrawingCamera::getAppInstance(lv_event_t* e)
-{
-    return static_cast<AppDrawingCamera*>(lv_event_get_user_data(e));
 }
